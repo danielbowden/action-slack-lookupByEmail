@@ -1,13 +1,12 @@
-name: 'Wait'
-description: 'Wait a designated number of milliseconds'
+name: 'Slack Lookup By Email'
+description: 'Find a Slack user by their email address'
 inputs:
-  milliseconds:  # id of input
-    description: 'number of milliseconds to wait'
+  email:
     required: true
-    default: '1000'
+    description: "user's email address to query"
 outputs:
-  time: # output will be available to future steps
-    description: 'The current time after waiting'
+  user:
+    description: 'The user profile hash as defined in https://api.slack.com/methods/users.lookupByEmail#profile'
 runs:
   using: 'node16'
   main: 'dist/index.js'
