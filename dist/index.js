@@ -16,32 +16,33 @@ const { WebClient } = __nccwpck_require__(431);
 
 module.exports = async function lookupUser(core) {
     try {
-      const email = core.getInput('email');
-      core.info(`Lookup slack user by email: ${email}`);
+        // Read token from the environment variables
+        const token = process.env.SLACK_BOT_TOKEN;
   
-      // Read token from the environment variables
-      const token = process.env.SLACK_BOT_TOKEN;
-  
-      if (token === undefined || token.length === 0) {
-        throw new Error('No slack token provided in env vars');
-      }
-  
-      const slackClient = new WebClient(token);
-      const result = await slackClient.users.lookupByEmail({
-        email: email
-      });
+        if (token === undefined || token.length === 0) {
+            throw new Error('No Slack token provided in env vars');
+        }
 
-      if (!result.ok) {
-        throw new Error(result.error);
-      }
-  
-      core.info(`Successfully found user ${result.user.name}`);
-      core.debug(`Slack user: ${result.user}`);
-      core.setOutput('user', result.user);
+        const email = core.getInput('email');
+        core.info(`Lookup Slack user by email: ${email}`);
+    
+        const slackClient = new WebClient(token);
+        const result = await slackClient.users.lookupByEmail({
+            email: email
+        });
+
+        if (!result.ok) {
+            throw new Error(result.error);
+        }
+    
+        core.info(`Successfully found Slack user: ${result.user.name}`);
+        core.debug(`Slack user: ${result.user}`);
+        core.setOutput('user', result.user);
+
     } catch (error) {
-      core.setFailed(error.message);
+        core.setFailed(error.message);
     }
-  };
+};
 
 /***/ }),
 

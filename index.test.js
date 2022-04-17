@@ -18,21 +18,21 @@ describe('lookupUser', () => {
   const slackClient = WebClient();
   beforeEach(() => {
     sinon.reset();
+    jest.clearAllMocks();
   });
 
   it('should set an error if no token is provided', async () => {
     delete process.env.SLACK_BOT_TOKEN;
     await lookupUser(stubCore);
-    expect(stubCore.setFailed.lastCall.firstArg).toBe('No slack token provided in env vars');
+    expect(stubCore.setFailed.lastCall.firstArg).toBe('No Slack token provided in env vars');
   });
 
   it('should handle success query email using lookupByEmail API', async () => {
-
     slackClient.users.lookupByEmail.mockImplementation(() => successResponse)
-
     process.env.SLACK_BOT_TOKEN = 'xoxb-xxxxx';
     stubCore.getInput.withArgs('email').returns('daniel@email.com');
     await lookupUser(stubCore);
+
     expect(stubCore.setFailed.called).toBe(false);
     expect(stubCore.setOutput.lastCall.firstArg).toBe('user');
     expect(stubCore.setOutput.lastCall.lastArg.name).toBe('daniel');
@@ -41,12 +41,11 @@ describe('lookupUser', () => {
   });
 
   it('should handle fail query email using lookupByEmail API with unknown email', async () => {
-
     slackClient.users.lookupByEmail.mockImplementation(() => errorResponse)
-
     process.env.SLACK_BOT_TOKEN = 'xoxb-xxxxx';
     stubCore.getInput.withArgs('email').returns('unknown@email.com');
     await lookupUser(stubCore);
+
     expect(stubCore.setFailed.lastCall.firstArg).toBe('users_not_found');
   });
 });
