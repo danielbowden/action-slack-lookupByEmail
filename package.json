@@ -1,7 +1,7 @@
 {
-  "name": "javascript-action",
+  "name": "action-slack-lookupByEmail",
   "version": "1.0.0",
-  "description": "JavaScript Action Template",
+  "description": "Find a Slack user by their email address",
   "main": "index.js",
   "scripts": {
     "lint": "eslint .",

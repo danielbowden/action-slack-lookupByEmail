@@ -1,20 +1,58 @@
-# Create a JavaScript Action
+# GitHub Action - Lookup Slack user by email
 
 <p align="center">
-  <a href="https://github.com/actions/javascript-action/actions"><img alt="javscript-action status" src="https://github.com/actions/javascript-action/workflows/units-test/badge.svg"></a>
+  <a href="https://github.com/danielbowden/action-slack-lookupByEmail/actions"><img alt="action slack lookupByEmail status" src="https://github.com/danielbowden/action-slack-lookupByEmail/workflows/units-test/badge.svg"></a>
 </p>
 
-Use this template to bootstrap the creation of a JavaScript action.:rocket:
+This action can be used to find a Slack user by their email address. In the event of a match, it will return a [User hash object](https://api.slack.com/types/user) for the registered Slack user.
 
-This template includes tests, linting, a validation workflow, publishing, and versioning guidance.
+The profile hash contains as much information as the user has supplied in the default profile fields: `display_name`, `avatar`, `real_name`, etc. 
 
-If you are new, there's also a simpler introduction.  See the [Hello World JavaScript Action](https://github.com/actions/hello-world-javascript-action)
+If you're using this action to lookup a user to send a direct message to using the `chat.postMessage` API or Slack's [Send Action](https://github.com/slackapi/slack-github-action), the `id` field is most useful.
 
-## Create an action from this template
+## Authentication
 
-Click the `Use this Template` and provide the new repo details for your action
+This action requires the `users:read.email` scope on either a Bot Token or User Token to make authenticated calls to the Slack API.
 
-## Code in Main
+There is more information on Slack's lookupByEmail API here: https://api.slack.com/methods/users.lookupByEmail 
+
+## Usage
+
+`email` is the only required action input parameter.
+
+Like described in Slack's [Send Action](https://github.com/slackapi/slack-github-action#setup-1), the authentication token should be added as a secret in your repo settings named SLACK_BOT_TOKEN. It is passed in using `env`.
+
+```yaml
+- name: Lookup Slack user
+  id: slack-user
+  uses: danielbowden/action-slack-lookupByEmail@main
+  with:
+    email: 'daniel@email.com'
+  env:
+    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+```
+
+You can also dynamically pass in email from the output result of a previous step. eg.
+```yaml
+- name: Lookup Slack user
+  id: slack-user
+  uses: danielbowden/action-slack-lookupByEmail@main
+  with:
+    email: ${{ steps.commit-author.outputs.result }}
+```
+
+You can access the user hash object result in follow up steps.
+```yaml
+steps.slack-user.outputs.user
+```
+or specific fields
+```yaml
+${{ fromJSON(steps.slack-user.outputs.user).id }}
+```
+
+
+
+## Development
 
 Install the dependencies
 
@@ -22,71 +60,35 @@ Install the dependencies
 npm install
 ```
 
-Run the tests :heavy_check_mark:
+Run tests
 
 ```bash
 $ npm test
 
  PASS  ./index.test.js
-  ✓ throws invalid number (3ms)
-  ✓ wait 500 ms (504ms)
-  ✓ test runs (95ms)
-...
+  lookupUser
+    ✓ should set an error if no token is provided (1 ms)
+    ✓ should handle success query email using lookupByEmail API (2 ms)
+    ✓ should handle fail query email using lookupByEmail API with unknown email (3 ms)
+
+  Test Suites: 1 passed, 1 total
+  Tests:       3 passed, 3 total
+  Snapshots:   0 total
+  Time:        0.268 s
+  Ran all test suites.
 ```
-
-## Change action.yml
-
-The action.yml defines the inputs and output for your action.
-
-Update the action.yml with your name, description, inputs and outputs for your action.
-
-See the [documentation](https://help.github.com/en/articles/metadata-syntax-for-github-actions)
-
-## Change the Code
-
-Most toolkit and CI/CD operations involve async operations so the action is run in an async function.
-
-```javascript
-const core = require('@actions/core');
-...
-
-async function run() {
-  try {
-      ...
-  }
-  catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-run()
-```
-
-See the [toolkit documentation](https://github.com/actions/toolkit/blob/master/README.md#packages) for the various packages.
 
 ## Package for distribution
 
-GitHub Actions will run the entry point from the action.yml. Packaging assembles the code into one file that can be checked in to Git, enabling fast and reliable execution and preventing the need to check in node_modules.
-
-Actions are run from GitHub repos.  Packaging the action will create a packaged action in the dist folder.
-
-Run prepare
+Packaging the action will create a packaged action in the dist folder.
 
 ```bash
 npm run prepare
 ```
 
-Since the packaged index.js is run from the dist folder.
-
-```bash
-git add dist
-```
-
 ## Create a release branch
 
 Users shouldn't consume the action from master since that would be latest code and actions can break compatibility between major versions.
-
-Checkin to the v1 release branch
 
 ```bash
 git checkout -b v1
@@ -97,20 +99,15 @@ git commit -a -m "v1 release"
 git push origin v1
 ```
 
-Note: We recommend using the `--license` option for ncc, which will create a license file for all of the production node modules used in your project.
-
-Your action is now published! :rocket:
 
 See the [versioning documentation](https://github.com/actions/toolkit/blob/master/docs/action-versioning.md)
 
-## Usage
-
-You can now consume the action by referencing the v1 branch
-
-```yaml
-uses: actions/javascript-action@v1
-with:
-  milliseconds: 1000
-```
-
 See the [actions tab](https://github.com/actions/javascript-action/actions) for runs of this action! :rocket:
+
+## Author
+
+Daniel Bowden
+
+[github.com/danielbowden](https://github.com/danielbowden)
+
+[twitter.com/danielgbowden](https://twitter.com/danielgbowden)
