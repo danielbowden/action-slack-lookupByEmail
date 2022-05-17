@@ -1,5 +1,9 @@
 name: 'Slack Lookup By Email'
 description: 'Find a Slack user by their email address'
+author: 'danielbowden'
+branding:
+  icon: user
+  color: blue
 inputs:
   email:
     required: true
