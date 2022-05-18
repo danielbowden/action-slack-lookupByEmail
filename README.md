@@ -25,7 +25,7 @@ Like described in Slack's [Send Action](https://github.com/slackapi/slack-github
 ```yaml
 - name: Lookup Slack user
   id: slack-user
-  uses: danielbowden/action-slack-lookupByEmail@main
+  uses: danielbowden/action-slack-lookupByEmail@v1
   with:
     email: 'daniel@email.com'
   env:
@@ -36,7 +36,7 @@ You can also dynamically pass in email from the output result of a previous step
 ```yaml
 - name: Lookup Slack user
   id: slack-user
-  uses: danielbowden/action-slack-lookupByEmail@main
+  uses: danielbowden/action-slack-lookupByEmail@v1
   with:
     email: ${{ steps.commit-author.outputs.result }}
 ```
