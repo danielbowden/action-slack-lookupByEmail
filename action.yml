@@ -12,5 +12,5 @@ outputs:
   user:
     description: 'The user profile hash as defined in https://api.slack.com/methods/users.lookupByEmail#profile'
 runs:
-  using: 'node16'
+  using: 'node24'
   main: 'dist/index.js'
