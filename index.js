@@ -1,4 +1,3 @@
-const core = require('@actions/core');
 const lookupUser = require('./lookupUser');
 
-lookupUser(core);
+import('@actions/core').then(core => lookupUser(core));
