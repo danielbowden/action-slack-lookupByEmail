@@ -1,0 +1,133 @@
+# Exercises the action the way consuming workflows do: reading the JSON output
+# with fromJSON, feeding it into later steps, and tolerating failures with
+# continue-on-error. Slack is replaced by test/fixtures/slack.js, so no secrets
+# are needed and the job is safe for forks and dependabot.
+name: consumer-contract
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'releases/*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SLACK_BOT_TOKEN: test-token
+  # Set per step (not here): checkout is itself a Node action and runs before
+  # the fixture file exists.
+  FIXTURE: ${{ github.workspace }}/test/fixtures/slack.js
+
+jobs:
+  output-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lookup user
+        id: slack-user
+        uses: ./
+        with:
+          email: daniel@example.com
+        env:
+          NODE_OPTIONS: --import=${{ env.FIXTURE }}
+
+      - name: Read fields with fromJSON
+        env:
+          USER_ID: ${{ fromJSON(steps.slack-user.outputs.user).id }}
+          USER_EMAIL: ${{ fromJSON(steps.slack-user.outputs.user).profile.email }}
+          REAL_NAME: ${{ fromJSON(steps.slack-user.outputs.user).real_name }}
+        run: |
+          test "$USER_ID" = A00000001
+          test "$USER_EMAIL" = daniel@example.com
+          test "$REAL_NAME" = "Test User"
+
+      - name: Use the output in a conditional
+        if: ${{ fromJSON(steps.slack-user.outputs.user).id != 'A00000001' }}
+        run: |
+          echo "fromJSON conditional evaluated the wrong user"
+          exit 1
+
+      - name: Feed an output field into another lookup
+        id: second-lookup
+        uses: ./
+        with:
+          email: ${{ fromJSON(steps.slack-user.outputs.user).profile.email }}
+        env:
+          NODE_OPTIONS: --import=${{ env.FIXTURE }}
+
+      - name: Chained lookup returns the same user
+        env:
+          FIRST: ${{ fromJSON(steps.slack-user.outputs.user).id }}
+          SECOND: ${{ fromJSON(steps.second-lookup.outputs.user).id }}
+        run: test "$FIRST" = "$SECOND"
+
+      - name: Plus-addressed email survives the round trip
+        id: plus-address
+        uses: ./
+        with:
+          email: daniel+ci@example.com
+        env:
+          NODE_OPTIONS: --import=${{ env.FIXTURE }}
+          SLACK_TEST_EMAIL: daniel+ci@example.com
+
+      - name: Plus-addressed result
+        env:
+          USER_EMAIL: ${{ fromJSON(steps.plus-address.outputs.user).profile.email }}
+        run: test "$USER_EMAIL" = daniel+ci@example.com
+
+  failure-contract:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        slack_error: [users_not_found, invalid_auth]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lookup that Slack rejects
+        id: slack-user
+        uses: ./
+        continue-on-error: true
+        with:
+          email: daniel@example.com
+        env:
+          NODE_OPTIONS: --import=${{ env.FIXTURE }}
+          SLACK_TEST_ERROR: ${{ matrix.slack_error }}
+
+      - name: Consumers can detect the failure and carry on
+        env:
+          OUTCOME: ${{ steps.slack-user.outcome }}
+          CONCLUSION: ${{ steps.slack-user.conclusion }}
+          USER_OUTPUT: ${{ steps.slack-user.outputs.user }}
+        run: |
+          test "$OUTCOME" = failure
+          test "$CONCLUSION" = success
+          test -z "$USER_OUTPUT"
+
+      - name: Fallback branch runs when the lookup failed
+        if: ${{ steps.slack-user.outcome == 'failure' }}
+        run: echo "fallback ran"
+
+  missing-token:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Lookup without a token
+        id: slack-user
+        uses: ./
+        continue-on-error: true
+        with:
+          email: daniel@example.com
+        env:
+          NODE_OPTIONS: --import=${{ env.FIXTURE }}
+          SLACK_BOT_TOKEN: ''
+
+      - name: Fails instead of silently succeeding
+        env:
+          OUTCOME: ${{ steps.slack-user.outcome }}
+        run: test "$OUTCOME" = failure
