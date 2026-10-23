@@ -28,7 +28,7 @@ module.exports = async function lookupUser(core) {
         }
     
         core.info(`Successfully found Slack user: ${result.user.name}`);
-        core.debug(`Slack user: ${result.user}`);
+        core.debug(`Slack user: ${JSON.stringify(result.user)}`);
         core.setOutput('user', result.user);
 
     } catch (error) {
